@@ -19,12 +19,36 @@ services:
       - POSTGRES_DB=sonar
 
   owasp-zap:
-    image: owasp/zap2docker-stable
+    image: ictu/zap2docker-weekly:latest
     container_name: owasp-zap
     command: zap-baseline.py -t http://app:8080 -r zap_report.html
+    depends_on:
+      - app
 
   app:
     build: ./src
     container_name: devsecops-app
     ports:
       - "8080:8080"
+    networks:
+      default:
+        aliases:
+          - app
+
+  defectdojo:
+    image: defectdojo/defectdojo-django:latest
+    container_name: defectdojo
+    ports:
+      - "8000:8000"
+    environment:
+      - DD_DATABASE_URL=postgres://dojo:dojo@db_dojo:5432/dojo
+    depends_on:
+      - db_dojo
+
+  db_dojo:
+    image: postgres:latest
+    container_name: dojo-db
+    environment:
+      - POSTGRES_USER=dojo
+      - POSTGRES_PASSWORD=dojo
+      - POSTGRES_DB=dojo
