@@ -1,0 +1,45 @@
+name: CI/CD DevSecOps
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Build Docker Images
+        run: docker-compose build
+
+      - name: Levantar Servicios
+        run: docker-compose up -d
+
+      - name: Esperar a que la app esté lista
+        run: sleep 30
+
+      - name: Ejecutar pruebas de la aplicación
+        run: curl -f http://localhost:8080 || exit 1
+
+      - name: SonarQube Analysis
+        uses: SonarSource/sonarqube-scan-action@master
+        env:
+            SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+            SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      - name: Ejecutar OWASP Dependency-Check vía Docker
+        run: |
+            docker run --rm -v $(pwd):/src owasp/dependency-check:latest \
+              --project "DevSecOps Challenge" --scan /src --format "HTML" --out /src/dependency-check-report.html
+          
+          
+
+      - name: Ejecutar OWASP ZAP Scan
+        run: docker run --rm -v $(pwd):/zap/wrk owasp/zap2docker-stable zap-baseline.py -t http://localhost:8080 -r zap_report.html
+
+      - name: Apagar Servicios
+        run: docker-compose down
