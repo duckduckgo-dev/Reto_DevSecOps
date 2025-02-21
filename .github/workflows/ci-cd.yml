@@ -12,10 +12,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-
-      - name: Build Docker Images
-        run: docker-compose build
-
+        
+      - name: Build Containers
+        run: docker compose build
+      
       - name: Levantar Servicios
         run: docker-compose up -d
 
