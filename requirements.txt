@@ -1,1 +1,3 @@
 boto3
+Flask==0.12  # Versión antigua con posibles vulnerabilidades
+requests==2.8.1  # Versión bastante antigua
