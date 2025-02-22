@@ -1,48 +1,58 @@
-name: CI/CD DevSecOps
+name: CI/CD Pipeline
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   pull_request:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
+    
     steps:
-      - name: Checkout del código
-        uses: actions/checkout@v3
+      - name: Checkout repo
+        uses: actions/checkout@v2
 
-      - name: Build de imágenes con Docker Compose
-        run: docker compose build
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
 
-      - name: Levantar servicios con Docker Compose
-        run: docker compose up -d
-
-      - name: Esperar a que la aplicación esté lista
-        run: sleep 30
-
-      - name: Ejecutar pruebas de la aplicación
+      - name: Install dependencies
         run: |
-          curl -f http://localhost:8080 || (echo "La aplicación no respondió" && exit 1)
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          # Instala Serverless Framework y plugin de Python
+          npm install -g serverless
+          serverless plugin install -n serverless-python-requirements
 
-      - name: Análisis con SonarQube
-        uses: SonarSource/sonarqube-scan-action@master
+      - name: Run SAST with Bandit
+        run: |
+          pip install bandit
+          bandit -r . -f custom --msg-template "{abspath}:{line}: {severity}: {test_id}: {msg}"
+
+      - name: Run SCA with OWASP Dependency-Check
+        uses: dependency-check/Dependency-Check_Action@main
         env:
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
-      - name: Ejecutar OWASP Dependency-Check vía Docker
+          JAVA_HOME: ${{ runner.tool_cache }}/jdk/11.0.19/x64
+        with:
+          project: 'My Project'
+          path: '.'
+          format: 'HTML'
+      
+      - name: Deploy to AWS Lambda
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         run: |
-          docker run --rm -v $(pwd):/src owasp/dependency-check:latest \
-          --project "DevSecOps Challenge" --scan /src --format "HTML" --out /src/dependency-check-report.html
+          serverless deploy
 
-      - name: Ejecutar escaneo DAST con OWASP ZAP
+      - name: Send findings to AWS Security Hub (optional)
+        if: always()
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         run: |
-          docker run --rm -v $(pwd):/zap/wrk owasp/zap2docker-stable \
-          zap-baseline.py -t http://localhost:8080 -r zap_report.html
-
-      - name: Detener servicios
-        run: docker compose down
+          # EJEMPLO SENCILLO (debes adaptar findings.json al formato de Security Hub)
+          aws securityhub batch-import-findings --findings file://findings.json
