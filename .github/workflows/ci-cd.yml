@@ -35,12 +35,6 @@ jobs:
           npm install -g serverless
           serverless plugin install -n serverless-python-requirements
           
-      - name: Set up Java 11
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'temurin'
-          java-version: '11'
-          
       - name: Run SAST with Bandit
         run: |
           pip install bandit
