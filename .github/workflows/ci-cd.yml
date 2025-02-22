@@ -40,14 +40,31 @@ jobs:
         run: |
           pip install bandit
           bandit -r . -x node_modules,venv --skip B108
-        
-      - name: Run SCA with OWASP Dependency-Check
+
+      - name: SCA with OWASP Dependency-Check (console)
         uses: dependency-check/Dependency-Check_Action@main
         continue-on-error: true
         with:
-          project: 'My Project'
+          project: 'My Project (console)'
+          path: '.'
+          format: 'CONSOLE'
+      
+      - name: SCA with OWASP Dependency-Check (html)
+        uses: dependency-check/Dependency-Check_Action@main
+        continue-on-error: true
+        with:
+          project: 'My Project (html)'
           path: '.'
           format: 'HTML'
+          out: '/github/workspace/reports'
+      
+      - name: Upload Dependency-Check Report
+        uses: actions/upload-artifact@v3
+        continue-on-error: true
+        with:
+          name: dependency-check-report
+          path: /github/workspace/reports/dependency-check-report.html
+        
       
       - name: Deploy to AWS Lambda
         env:
