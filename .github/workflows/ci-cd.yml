@@ -29,8 +29,8 @@ jobs:
       - name: Run SAST with Bandit
         run: |
           pip install bandit
-          bandit -r . -f custom --msg-template "{abspath}:{line}: {severity}: {test_id}: {msg}"
-
+          bandit -r . --exclude node_modules,venv -f custom --msg-template "{abspath}:{line}: {severity}: {test_id}: {msg}"
+        
       - name: Run SCA with OWASP Dependency-Check
         uses: dependency-check/Dependency-Check_Action@main
         env:
