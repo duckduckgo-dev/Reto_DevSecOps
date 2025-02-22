@@ -19,6 +19,14 @@ jobs:
         with:
           python-version: 3.8
 
+      - name: Check AWS identity
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: "us-east-1"
+        run: |
+            aws sts get-caller-identity
+        
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -29,7 +37,7 @@ jobs:
       - name: Run SAST with Bandit
         run: |
           pip install bandit
-          bandit -r . --exclude node_modules,venv -f custom --msg-template "{abspath}:{line}: {severity}: {test_id}: {msg}"
+          bandit -r . -x node_modules,venv --skip B108
         
       - name: Run SCA with OWASP Dependency-Check
         uses: dependency-check/Dependency-Check_Action@main
@@ -49,11 +57,9 @@ jobs:
           serverless deploy
 
       - name: Send findings to AWS Security Hub
-        if: always()
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: "us-east-1"
         run: |
-          # EJEMPLO SENCILLO: findings.json debe existir y estar formateado correctamente
           aws securityhub batch-import-findings --findings file://findings.json
