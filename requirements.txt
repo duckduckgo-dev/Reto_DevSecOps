@@ -1,5 +1,4 @@
 boto3
-Flask==0.12  # Versión antigua con posibles vulnerabilidades
 requests==2.8.1  # Versión bastante antigua
 Flask==2.0.1
 Werkzeug==2.0.1
