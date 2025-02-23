@@ -66,7 +66,7 @@ def process_dependency_check_findings(dc_file):
 
 if __name__ == "__main__":
     AWS_REGION = "us-east-1"  # Replace with your AWS region
-    AWS_ACCOUNT_ID = "your-aws-account-id"  # Replace with your AWS account ID
+    AWS_ACCOUNT_ID = "921300860955"  # Replace with your AWS account ID
 
     bandit_findings = process_bandit_findings('bandit-results.json')
     dc_findings = process_dependency_check_findings('./reports/dependency-check-report.json')
