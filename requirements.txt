@@ -3,4 +3,3 @@ requests==2.8.1  # Versión bastante antigua
 Flask==2.0.1
 Werkzeug==2.0.1
 django==2.2.0
-requests==2.18.4
