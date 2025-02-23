@@ -31,21 +31,21 @@ jobs:
         continue-on-error: true
         run: |
           pip install bandit
-          bandit -r . -x node_modules,venv --skip B108
+          bandit -r . -f json -o bandit-results.json -x node_modules,venv --skip B108
 
       - name: Run SCA with OWASP Dependency-Check
         uses: dependency-check/Dependency-Check_Action@main
         with:
           project: 'My Project'
           path: '.'
-          format: 'HTML'
+          format: 'JSON'
           out: './reports'
         
       - name: Upload Dependency-Check Report
         uses: actions/upload-artifact@v4
         with:
           name: dependency-check-report
-          path: './reports/dependency-check-report.html'
+          path: './reports/dependency-check-report.json'
           
       - name: Deploy to AWS Lambda
         env:
@@ -55,10 +55,12 @@ jobs:
         run: |
           serverless deploy
 
-      - name: Send findings to AWS Security Hub
+      - name: Process and send findings to AWS Security Hub
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: "us-east-1"
         run: |
-          aws securityhub batch-import-findings --findings file://findings.json
+          pip install awscli
+          python process_findings.py
+          aws securityhub batch-import-findings --findings file://security-hub-findings.json
